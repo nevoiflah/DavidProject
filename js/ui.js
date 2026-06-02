@@ -30,10 +30,6 @@ function switchView(viewName) {
     navEl.style.display = state.isCustomerFillMode ? 'none' : 'flex';
   }
 
-  if (viewName === 'dashboard') {
-    renderSubmissions();
-  }
-
   toggleAdminControls();
   lucide.createIcons();
 }
@@ -49,9 +45,6 @@ function toggleAdminControls() {
   document.querySelectorAll('.btn-admin-only').forEach(el => {
     el.style.display = isAuth ? 'inline-flex' : 'none';
   });
-
-  const submissionsSec = document.getElementById('admin-submissions-section');
-  if (submissionsSec) submissionsSec.style.display = isAuth ? 'block' : 'none';
 
   const adminToolbar = document.getElementById('admin-global-toolbar');
   if (adminToolbar) adminToolbar.style.display = isAuth ? 'flex' : 'none';

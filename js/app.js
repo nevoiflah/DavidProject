@@ -131,17 +131,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); shareTemplateConfig(btn.dataset.template); });
   });
 
-  // Event delegation: submissions list
-  document.getElementById('submissions-list-wrapper')?.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-action]');
-    if (!btn) return;
-    const { action, id, template } = btn.dataset;
-    if (action === 'redirect-login')   switchView('login');
-    else if (action === 'download-pdf')     downloadSubmissionPdf(id);
-    else if (action === 'edit-submission')  openFormFiller(template, id);
-    else if (action === 'delete-submission') deleteSubmission(id);
-  });
-
   // Event delegation: mapped fields list
   document.getElementById('mapped-fields-list')?.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-action]');
