@@ -295,6 +295,14 @@ function setupInlineFields(pageFields, overlayDiv, containerHeight) {
             if (pad) pad.isEmpty = false;
           };
           img.src = sub.signatureImagesMap[field.id];
+        } else if (isAutoStampField(field)) {
+          const stamp = new Image();
+          stamp.onload = () => {
+            sCtx.drawImage(stamp, 0, 0, sCanvas.width, sCanvas.height);
+            const pad = activeSignaturePads.find(p => p.fieldId === field.id);
+            if (pad) pad.isEmpty = false;
+          };
+          stamp.src = generateCompanyStampBase64();
         }
       }, 100);
     }

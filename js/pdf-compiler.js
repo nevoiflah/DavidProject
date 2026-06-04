@@ -224,7 +224,8 @@ async function compileSignedPdf(template, formData, signatureImagesMap) {
         });
       }
     } else if (field.type === 'signature') {
-      const sigBase64 = signatureImagesMap[field.id];
+      const sigBase64 = signatureImagesMap[field.id] ||
+        (isAutoStampField(field) ? generateCompanyStampBase64() : null);
       if (sigBase64) {
         const signatureImage = await pdfDoc.embedPng(sigBase64);
         page.drawImage(signatureImage, { x: pdfX, y: pdfY, width: pdfW, height: pdfH });

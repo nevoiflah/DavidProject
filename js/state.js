@@ -1,5 +1,5 @@
 // EmailJS credentials
-const EMAILJS_SERVICE_ID  = 'service_zktab4h';
+const EMAILJS_SERVICE_ID  = 'service_0ubvhn8';
 const EMAILJS_TEMPLATE_ID = 'template_m1yu7gd';
 const EMAILJS_PUBLIC_KEY  = '3Gd9evrWKFqUP0XLw';
 
