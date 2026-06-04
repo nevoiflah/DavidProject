@@ -2,7 +2,81 @@
 /*          Inline PDF / Image Filler Renderer & Overlay Setup                */
 /* -------------------------------------------------------------------------- */
 
+let _fillerResizeObserver = null;
+
+// Re-renders the filler when the container width changes (e.g. phone rotation),
+// saving and restoring any values the user already typed or signed.
+function setupFillerResizeObserver(tpl) {
+  const container = document.getElementById('filler-pdf-renderer-wrapper');
+  if (!container || typeof ResizeObserver === 'undefined') return;
+
+  if (_fillerResizeObserver) { _fillerResizeObserver.disconnect(); _fillerResizeObserver = null; }
+
+  let lastWidth   = container.clientWidth;
+  let debounceTimer = null;
+
+  _fillerResizeObserver = new ResizeObserver(entries => {
+    const newWidth = entries[0]?.contentRect?.width ?? container.clientWidth;
+    if (Math.abs(newWidth - lastWidth) < 30) return;
+    lastWidth = newWidth;
+
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(async () => {
+      // Snapshot current form data before clearing
+      const savedValues = {};
+      for (const input of container.querySelectorAll('.pdf-inline-input')) {
+        savedValues[input.dataset.fieldName] = input.value;
+      }
+      // Snapshot signatures (null = user explicitly cleared; data-URL = has content)
+      const savedSigs = {};
+      for (const pad of activeSignaturePads) {
+        savedSigs[pad.fieldId] = pad.isEmpty ? null : pad.canvas.toDataURL('image/png');
+      }
+
+      // Re-render at new width
+      container.innerHTML = '';
+      activeSignaturePads = [];
+      try {
+        if (tpl.isImageTemplate) {
+          await renderImagesForFilling(tpl.images, tpl.fields);
+        } else {
+          await renderPdfForFilling(tpl.pdfBytes, tpl.fields);
+        }
+      } catch (e) { console.error('Resize re-render failed', e); return; }
+
+      // Restore text/select values immediately
+      for (const input of container.querySelectorAll('.pdf-inline-input')) {
+        const saved = savedValues[input.dataset.fieldName];
+        if (saved !== undefined) input.value = saved;
+      }
+
+      // Restore signatures after canvas initialisation settles (100ms timeout inside setupInlineFields)
+      setTimeout(() => {
+        for (const pad of activeSignaturePads) {
+          if (!(pad.fieldId in savedSigs)) continue;
+          const saved = savedSigs[pad.fieldId];
+          if (saved) {
+            const img = new Image();
+            img.onload = () => { pad.ctx.drawImage(img, 0, 0, pad.canvas.width, pad.canvas.height); pad.isEmpty = false; };
+            img.src = saved;
+          } else {
+            // User had cleared this pad — wipe the auto-stamp that re-appeared
+            pad.ctx.fillStyle = '#ffffff';
+            pad.ctx.fillRect(0, 0, pad.canvas.width, pad.canvas.height);
+            pad.isEmpty = true;
+          }
+        }
+      }, 200);
+    }, 300);
+  });
+
+  _fillerResizeObserver.observe(container);
+}
+
 async function openFormFiller(templateKey, submissionId = null) {
+  // Tear down any resize observer from a previous form
+  if (_fillerResizeObserver) { _fillerResizeObserver.disconnect(); _fillerResizeObserver = null; }
+
   state.activeTemplate             = templateKey;
   state.currentEditingSubmissionId = submissionId;
 
@@ -76,6 +150,7 @@ async function openFormFiller(templateKey, submissionId = null) {
       await renderPdfForFilling(tpl.pdfBytes, tpl.fields);
     }
     showToast("המסמך מוכן להקלדה ולחתימה!", "success");
+    setupFillerResizeObserver(tpl);
   } catch (err) {
     console.error("Error rendering template for filling", err);
     showToast("שגיאה ברנדור דפי ה-PDF למילוי", "error");

@@ -574,29 +574,22 @@ function setupDragAndResize(element, resizeHandle, field) {
           }
         }
 
-        if (targetPageIdx !== -1 && targetOverlay) {
+        // Cross-page drop only: reparent element and recalculate coords relative to new page
+        if (targetPageIdx !== -1 && targetOverlay && targetPageIdx !== field.page) {
           const relX = ((clientX - targetPageRect.left) / targetPageRect.width)  * 100;
           const relY = ((clientY - targetPageRect.top)  / targetPageRect.height) * 100;
-          const newX = Math.max(0, Math.min(100 - field.w, relX));
-          const newY = Math.max(0, Math.min(100 - field.h, relY));
-
-          if (targetPageIdx !== field.page) {
-            field.page = targetPageIdx;
-            if (element.parentElement) element.parentElement.removeChild(element);
-            targetOverlay.appendChild(element);
-            showToast(`השדה הועבר לעמוד ${targetPageIdx + 1}`, "info");
-          }
-
-          field.x = parseFloat(newX.toFixed(2));
-          field.y = parseFloat(newY.toFixed(2));
-          element.style.left = `${field.x}%`;
-          element.style.top  = `${field.y}%`;
-        } else {
-          field.x = Math.max(0, Math.min(100 - field.w, field.x));
-          field.y = Math.max(0, Math.min(100 - field.h, field.y));
-          element.style.left = `${field.x}%`;
-          element.style.top  = `${field.y}%`;
+          field.x    = parseFloat(Math.max(0, Math.min(100 - field.w, relX)).toFixed(2));
+          field.y    = parseFloat(Math.max(0, Math.min(100 - field.h, relY)).toFixed(2));
+          field.page = targetPageIdx;
+          if (element.parentElement) element.parentElement.removeChild(element);
+          targetOverlay.appendChild(element);
+          showToast(`השדה הועבר לעמוד ${targetPageIdx + 1}`, "info");
         }
+        // Same-page drop: position already tracked by updatePosition() — just clamp to bounds
+        field.x = Math.max(0, Math.min(100 - field.w, field.x));
+        field.y = Math.max(0, Math.min(100 - field.h, field.y));
+        element.style.left = `${field.x}%`;
+        element.style.top  = `${field.y}%`;
       }
       saveStateToDB();
       renderMappedFieldsList();
