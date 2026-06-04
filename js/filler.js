@@ -94,7 +94,9 @@ async function renderPdfForFilling(pdfBytes, fields) {
 
   for (let pageNum = 1; pageNum <= numPages; pageNum++) {
     const page            = await pdfJsDocInstance.getPage(pageNum);
-    const displayScale    = 1.35;
+    const naturalViewport = page.getViewport({ scale: 1 });
+    const maxWidth        = (container.clientWidth || window.innerWidth) - 16;
+    const displayScale    = Math.min(1.35, maxWidth / naturalViewport.width);
     const displayViewport = page.getViewport({ scale: displayScale });
     const dpr             = window.devicePixelRatio || 1;
     const renderScale     = displayScale * Math.max(2, dpr);
@@ -139,7 +141,8 @@ function renderImagesForFilling(imagesArray, fields) {
       img.src      = imgUrl;
 
       img.onload = () => {
-        const displayWidth  = 850;
+        const maxWidth      = (container.clientWidth || window.innerWidth) - 16;
+        const displayWidth  = Math.min(850, maxWidth);
         const aspectRatio   = img.height / img.width;
         const displayHeight = displayWidth * aspectRatio;
 

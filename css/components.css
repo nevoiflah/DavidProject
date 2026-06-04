@@ -321,3 +321,46 @@ main {
   font-size: 0.8rem;
   color: var(--accent-hover);
 }
+
+/* ── Mobile layout ─────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  header {
+    padding: 0.6rem 1rem;
+    gap: 0.5rem;
+  }
+
+  .logo-partner {
+    font-size: 1rem;
+    padding: 4px 8px;
+  }
+
+  /* Hide long subtitle on small screens */
+  .app-title {
+    display: none;
+  }
+
+  nav {
+    gap: 6px;
+  }
+
+  .btn-nav {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    min-height: 38px;
+  }
+
+  main {
+    padding: 0.75rem;
+    gap: 1rem;
+  }
+
+  /* Single-column cards on phones */
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .template-card {
+    min-height: 200px;
+  }
+}

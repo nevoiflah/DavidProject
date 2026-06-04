@@ -544,29 +544,56 @@
   to { transform: rotate(360deg); }
 }
 
-/* Fix 7: Mobile responsive mapper/filler */
+/* Mobile responsive mapper/filler */
 @media (max-width: 768px) {
+  /* ── Shared mapper/filler container ──────────────────────────────── */
   .mapper-container {
     grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
     height: auto;
     min-height: 0;
   }
 
+  /* Sidebar: no hard height cap so submit button is never clipped */
   .mapper-sidebar {
-    max-height: 40vh;
-    overflow-y: auto;
-  }
-
-  .mapper-workspace {
-    min-height: 60vh;
+    max-height: none;
+    overflow-y: visible;
     padding: 1rem;
   }
 
-  .pdf-pages-wrapper {
-    gap: 1rem;
+  .mapper-workspace {
+    padding: 0.5rem;
+    min-height: 0;
   }
 
+  .pdf-pages-wrapper {
+    gap: 0.75rem;
+  }
+
+  /* ── Form-filler specific ─────────────────────────────────────────── */
+
+  /* Show PDF workspace BEFORE the instructions sidebar on mobile */
+  #filler-workspace-container {
+    order: -1;
+  }
+
+  /* Hide verbose instructions on mobile — they read naturally on the PDF */
+  #view-form-filler .card-desc,
+  #view-form-filler .guide-card {
+    display: none;
+  }
+
+  /* Compact the filler sidebar header */
+  #view-form-filler .mapper-sidebar {
+    padding: 0.75rem 1rem;
+    gap: 0.75rem;
+  }
+
+  /* Submit + cancel buttons full-width and easy to tap */
+  #view-form-filler .mapper-sidebar > div:last-child {
+    flex-direction: column;
+  }
+
+  /* ── Success view ──────────────────────────────────────────────────── */
   .success-layout {
     grid-template-columns: 1fr;
     height: auto;
@@ -574,7 +601,7 @@
   }
 
   .pdf-preview-pane {
-    min-height: 50vh;
+    min-height: 55vh;
   }
 }
 
