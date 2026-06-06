@@ -163,7 +163,7 @@ const DEFAULT_FIELD_MAPPINGS = {
       {
         "id": "dm_os_sig_buyer_top",
         "name": "sig_buyer_top",
-        "label": "חתימת הלקוח (שם הלקוח)",
+        "label": "חתימת IDE",
         "type": "signature",
         "page": 1,
         "x": 12.8, "y": 39.0, "w": 30, "h": 8,
@@ -182,7 +182,7 @@ const DEFAULT_FIELD_MAPPINGS = {
       {
         "id": "dm_os_sig_payment",
         "name": "sig_buyer_payment",
-        "label": "חתימת הלקוח (תשלום)",
+        "label": "חתימת IDE",
         "type": "signature",
         "page": 2,
         "x": 20.8, "y": 89.5, "w": 32.3, "h": 8,
@@ -201,7 +201,7 @@ const DEFAULT_FIELD_MAPPINGS = {
       {
         "id": "dm_ob_sig_client_top",
         "name": "sig_client_top",
-        "label": "חתימת הלקוח",
+        "label": "חתימת IDE",
         "type": "signature",
         "page": 0,
         "x": 4, "y": 57.0, "w": 40, "h": 8,
