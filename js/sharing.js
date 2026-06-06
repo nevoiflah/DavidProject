@@ -33,7 +33,7 @@ function updateMailtoLink(fileUrl) {
     ? `היי מיה,\n\nמצורפים הטפסים החתומים של ${userName}. לצפייה והורדה לחצי כאן:\n${urlToUse}`
     : `היי מיה,\n\nמצורפים הטפסים החתומים של ${userName}.\n\nקובץ ה-PDF החתום הורד למחשבך באופן אוטומטי (בתיקיית ההורדות).\nאנא גררי או צרפי את הקובץ למייל זה.\n\nתודה.`;
 
-  const mailtoUrl = `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(recipient)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  const mailtoUrl = `https://outlook.office.com/mail/deeplink/compose?to=${encodeURIComponent(recipient)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   const mailtoLinkEl = document.getElementById('btn-send-mailto-link');
   if (mailtoLinkEl) mailtoLinkEl.href = mailtoUrl;
 }

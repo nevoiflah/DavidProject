@@ -159,16 +159,6 @@ const DEFAULT_FIELD_MAPPINGS = {
         "x": 4.2, "y": 58.5, "w": 27.6, "h": 2.8,
         "required": false, "color": "purple"
       },
-      // ── Seller signature ─────────────────────────────────────────────
-      {
-        "id": "dm_os_sig_seller",
-        "name": "sig_seller",
-        "label": "חתימת המוכר",
-        "type": "signature",
-        "page": 0,
-        "x": 4, "y": 68.0, "w": 40, "h": 10,
-        "required": true, "color": "purple"
-      },
       // ── Page 1: buyer/customer signatures (top + bottom) ─────────────
       {
         "id": "dm_os_sig_buyer_top",
@@ -182,7 +172,7 @@ const DEFAULT_FIELD_MAPPINGS = {
       {
         "id": "dm_os_sig_buyer_bottom",
         "name": "sig_buyer_bottom",
-        "label": "חתימת הלקוח הקונה",
+        "label": "חתימת IDE",
         "type": "signature",
         "page": 1,
         "x": 4, "y": 88.0, "w": 40, "h": 9,
@@ -207,6 +197,16 @@ const DEFAULT_FIELD_MAPPINGS = {
   /* ------------------------------------------------------------------ */
   "ownership_buyer": {
     "fields": [
+      // ── Page 0: client signature at top (near "סוג לקוח") ────────────
+      {
+        "id": "dm_ob_sig_client_top",
+        "name": "sig_client_top",
+        "label": "חתימת הלקוח",
+        "type": "signature",
+        "page": 0,
+        "x": 4, "y": 57.0, "w": 40, "h": 8,
+        "required": true, "color": "purple"
+      },
       // ── Page 0: IDE (transferor) signature at bottom ─────────────────
       {
         "id": "dm_ob_sig_ide",
@@ -311,7 +311,7 @@ const DEFAULT_FIELD_MAPPINGS = {
       {
         "id": "dm_ob_sig_buyer",
         "name": "sig_buyer",
-        "label": "חתימת הקונה",
+        "label": "חתימת הלקוח הקונה",
         "type": "signature",
         "page": 1,
         "x": 4, "y": 88.0, "w": 40, "h": 9,
@@ -339,7 +339,7 @@ const DEFAULT_FIELD_MAPPINGS = {
       {
         "id": "dm_ob_sig_payment",
         "name": "sig_buyer_payment",
-        "label": "חתימת קונה (תשלום)",
+        "label": "חתימת IDE",
         "type": "signature",
         "page": 2,
         "x": 20.8, "y": 89.5, "w": 32.3, "h": 8,
