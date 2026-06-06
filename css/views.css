@@ -49,6 +49,7 @@
   background: white;
   border-radius: 4px;
   overflow: hidden;
+  scroll-margin-top: 76px; /* clear the sticky page stepper when scrolled to */
 }
 
 .pdf-page-overlay {
@@ -287,6 +288,112 @@
   z-index: 20;
   border-radius: 4px;
   transition: border-color 0.2s;
+}
+
+/* Signature toolbar (undo + clear), anchored above each signature box */
+.sig-toolbar {
+  position: absolute;
+  z-index: 30;
+  display: flex;
+  gap: 4px;
+}
+
+.sig-tool-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border: none;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: #fff;
+  font-family: inherit;
+  transition: filter 0.15s;
+}
+
+.sig-tool-btn i {
+  width: 12px;
+  height: 12px;
+}
+
+.sig-tool-btn:hover { filter: brightness(1.12); }
+
+.sig-undo  { background: #475569; }
+.sig-clear { background: #ef4444; }
+
+/* Page navigation stepper (multi-page forms) */
+.page-stepper {
+  position: sticky;
+  top: 0;
+  z-index: 25;
+  align-self: stretch;
+  display: flex;
+  flex-direction: row-reverse; /* step 1 on the right for RTL */
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 0.6rem 1rem;
+  margin-bottom: 1.5rem;
+  background: rgba(9, 13, 22, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+}
+
+.page-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  min-width: 44px;
+  font-family: inherit;
+}
+
+.page-step-dot {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px solid var(--panel-border);
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 0.85rem;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.page-step-check { width: 16px; height: 16px; display: none; }
+.page-step-label { font-size: 0.75rem; color: var(--text-muted); transition: color 0.2s; }
+
+.page-step.active .page-step-dot {
+  border-color: var(--accent-color);
+  color: var(--text-main);
+  background: rgba(139, 92, 246, 0.18);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+.page-step.active .page-step-label { color: var(--text-main); }
+
+.page-step.done .page-step-dot {
+  background: var(--success-color);
+  border-color: var(--success-color);
+  color: #fff;
+}
+.page-step.done .page-step-num   { display: none; }
+.page-step.done .page-step-check { display: block; }
+
+.page-step-line {
+  flex: 0 0 28px;
+  height: 2px;
+  background: var(--panel-border);
 }
 
 .pdf-inline-signature-canvas:hover {

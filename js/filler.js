@@ -3,6 +3,85 @@
 /* -------------------------------------------------------------------------- */
 
 let _fillerResizeObserver = null;
+let _pageStepperObserver  = null;
+
+// Builds the page-navigation stepper above the rendered PDF pages.
+// Hidden automatically for single-page forms.
+function buildPageStepper() {
+  const stepper = document.getElementById('filler-page-stepper');
+  const wrapper = document.getElementById('filler-pdf-renderer-wrapper');
+  const root    = document.getElementById('filler-workspace-container');
+  if (!stepper || !wrapper) return;
+
+  if (_pageStepperObserver) { _pageStepperObserver.disconnect(); _pageStepperObserver = null; }
+
+  const pages = [...wrapper.querySelectorAll('.pdf-page-container')];
+  stepper.innerHTML = '';
+
+  if (pages.length <= 1) { stepper.classList.add('hidden'); return; }
+  stepper.classList.remove('hidden');
+
+  pages.forEach((pageEl, i) => {
+    if (i > 0) {
+      const line = document.createElement('span');
+      line.className = 'page-step-line';
+      stepper.appendChild(line);
+    }
+    const step = document.createElement('button');
+    step.type           = 'button';
+    step.className      = 'page-step';
+    step.dataset.stepIndex = i;
+    step.setAttribute('role', 'tab');
+    step.setAttribute('aria-label', `עמוד ${i + 1}`);
+    step.innerHTML = `<span class="page-step-dot"><span class="page-step-num">${i + 1}</span><i data-lucide="check" class="page-step-check"></i></span><span class="page-step-label">עמוד ${i + 1}</span>`;
+    step.addEventListener('click', () => pageEl.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    stepper.appendChild(step);
+  });
+  lucide.createIcons();
+
+  // Scroll-spy: highlight whichever page sits near the top of the workspace
+  _pageStepperObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) setActivePageStep(+entry.target.dataset.pageIndex);
+    });
+  }, { root, rootMargin: '-5% 0px -80% 0px', threshold: 0 });
+  pages.forEach(p => _pageStepperObserver.observe(p));
+
+  // Recompute completion ticks as the user fills the form
+  wrapper.addEventListener('input',  refreshStepCompletion);
+  wrapper.addEventListener('change', refreshStepCompletion);
+
+  setActivePageStep(0);
+  refreshStepCompletion();
+}
+
+function setActivePageStep(idx) {
+  document.querySelectorAll('#filler-page-stepper .page-step').forEach(s => {
+    s.classList.toggle('active', +s.dataset.stepIndex === idx);
+  });
+}
+
+// Marks a page step "done" when its required text fields and required
+// signatures are all filled.
+function refreshStepCompletion() {
+  const wrapper = document.getElementById('filler-pdf-renderer-wrapper');
+  if (!wrapper) return;
+  const pages = [...wrapper.querySelectorAll('.pdf-page-container')];
+  pages.forEach((pageEl, i) => {
+    const inputs = [...pageEl.querySelectorAll('.pdf-inline-input[required]')];
+    const textOk = inputs.every(inp => inp.value && inp.value.trim() !== '');
+
+    const reqSigs = [...pageEl.querySelectorAll('.pdf-inline-signature-canvas[data-required="1"]')];
+    const sigOk = reqSigs.every(c => {
+      const pad = activeSignaturePads.find(p => p.fieldId === c.dataset.fieldId);
+      return pad ? !pad.isEmpty : false;
+    });
+
+    const hasReq = inputs.length + reqSigs.length > 0;
+    const step = document.querySelector(`#filler-page-stepper .page-step[data-step-index="${i}"]`);
+    if (step) step.classList.toggle('done', hasReq && textOk && sigOk);
+  });
+}
 
 // Re-renders the filler when the container width changes (e.g. phone rotation),
 // saving and restoring any values the user already typed or signed.
@@ -57,15 +136,16 @@ function setupFillerResizeObserver(tpl) {
           const saved = savedSigs[pad.fieldId];
           if (saved) {
             const img = new Image();
-            img.onload = () => { pad.ctx.drawImage(img, 0, 0, pad.canvas.width, pad.canvas.height); pad.isEmpty = false; };
+            img.onload = () => { pad.ctx.drawImage(img, 0, 0, pad.canvas.width, pad.canvas.height); pad.isEmpty = false; pad.showingPlaceholder = false; };
             img.src = saved;
           } else {
-            // User had cleared this pad — wipe the auto-stamp that re-appeared
-            pad.ctx.fillStyle = '#ffffff';
-            pad.ctx.fillRect(0, 0, pad.canvas.width, pad.canvas.height);
+            // User had cleared this pad — restore the empty "sign here" guide
+            drawSignaturePlaceholder(pad.ctx, pad.canvas);
             pad.isEmpty = true;
+            pad.showingPlaceholder = true;
           }
         }
+        refreshStepCompletion();
       }, 200);
     }, 300);
   });
@@ -202,6 +282,8 @@ async function renderPdfForFilling(pdfBytes, fields) {
     const pageFields = fields.filter(f => f.page === pageNum - 1);
     setupInlineFields(pageFields, overlayDiv, displayViewport.height);
   }
+
+  buildPageStepper();
 }
 
 function renderImagesForFilling(imagesArray, fields) {
@@ -249,7 +331,7 @@ function renderImagesForFilling(imagesArray, fields) {
 
         URL.revokeObjectURL(imgUrl);
         loadedCount++;
-        if (loadedCount === imagesArray.length) resolve();
+        if (loadedCount === imagesArray.length) { buildPageStepper(); resolve(); }
       };
     });
   });
@@ -328,31 +410,37 @@ function setupInlineFields(pageFields, overlayDiv, containerHeight) {
       if (formData[field.name] !== undefined) chk.checked = formData[field.name] === true;
       overlayDiv.appendChild(chk);
     } else if (field.type === 'signature') {
+      const autoStamp      = isAutoStampField(field);
       const sCanvas        = document.createElement('canvas');
       sCanvas.className    = 'pdf-inline-signature-canvas';
       if (field.color === 'yellow') sCanvas.classList.add('yellow-field');
-      sCanvas.dataset.fieldId = field.id;
+      sCanvas.dataset.fieldId  = field.id;
+      sCanvas.dataset.required = field.required ? '1' : '0';
       sCanvas.style.left   = `${field.x}%`;
       sCanvas.style.top    = `${field.y}%`;
       sCanvas.style.width  = `${field.w}%`;
       sCanvas.style.height = `${field.h}%`;
       overlayDiv.appendChild(sCanvas);
 
-      const clearBtn           = document.createElement('button');
-      clearBtn.type            = 'button';
-      clearBtn.textContent     = 'נקה';
-      clearBtn.style.position  = 'absolute';
-      clearBtn.style.left      = `${field.x}%`;
-      clearBtn.style.top       = `calc(${field.y}% - 22px)`;
-      clearBtn.style.zIndex    = '30';
-      clearBtn.style.background = '#ef4444';
-      clearBtn.style.color     = 'white';
-      clearBtn.style.border    = 'none';
-      clearBtn.style.padding   = '2px 8px';
-      clearBtn.style.borderRadius = '4px';
-      clearBtn.style.fontSize  = '0.7rem';
-      clearBtn.style.cursor    = 'pointer';
-      overlayDiv.appendChild(clearBtn);
+      // Toolbar (undo + clear) anchored just above the signature box
+      const toolbar       = document.createElement('div');
+      toolbar.className   = 'sig-toolbar';
+      toolbar.style.left  = `${field.x}%`;
+      toolbar.style.top   = `calc(${field.y}% - 28px)`;
+
+      const undoBtn       = document.createElement('button');
+      undoBtn.type        = 'button';
+      undoBtn.className    = 'sig-tool-btn sig-undo';
+      undoBtn.innerHTML   = '<i data-lucide="undo-2"></i> בטל';
+
+      const clearBtn      = document.createElement('button');
+      clearBtn.type       = 'button';
+      clearBtn.className   = 'sig-tool-btn sig-clear';
+      clearBtn.innerHTML  = '<i data-lucide="eraser"></i> נקה';
+
+      toolbar.appendChild(undoBtn);
+      toolbar.appendChild(clearBtn);
+      overlayDiv.appendChild(toolbar);
 
       setTimeout(() => {
         const rect    = sCanvas.getBoundingClientRect();
@@ -363,88 +451,148 @@ function setupInlineFields(pageFields, overlayDiv, containerHeight) {
         sCtx.fillStyle = '#ffffff';
         sCtx.fillRect(0, 0, sCanvas.width, sCanvas.height);
 
-        initInlineSignatureDrawing(sCanvas, sCtx, field.id, clearBtn);
+        const pad = initInlineSignatureDrawing(sCanvas, sCtx, field.id, clearBtn, undoBtn, autoStamp);
 
         if (sub && sub.signatureImagesMap && sub.signatureImagesMap[field.id]) {
           const img = new Image();
           img.onload = () => {
             sCtx.drawImage(img, 0, 0, sCanvas.width, sCanvas.height);
-            const pad = activeSignaturePads.find(p => p.fieldId === field.id);
-            if (pad) pad.isEmpty = false;
+            pad.isEmpty = false; pad.showingPlaceholder = false;
+            refreshStepCompletion();
           };
           img.src = sub.signatureImagesMap[field.id];
-        } else if (isAutoStampField(field)) {
+        } else if (autoStamp) {
           const stamp = new Image();
           stamp.onload = () => {
             sCtx.drawImage(stamp, 0, 0, sCanvas.width, sCanvas.height);
-            const pad = activeSignaturePads.find(p => p.fieldId === field.id);
-            if (pad) pad.isEmpty = false;
+            pad.isEmpty = false; pad.showingPlaceholder = false;
+            refreshStepCompletion();
           };
           stamp.src = generateCompanyStampBase64();
+        } else {
+          // Empty pad — show the "sign here" guide so users know where to draw
+          drawSignaturePlaceholder(sCtx, sCanvas);
+          pad.showingPlaceholder = true;
         }
+        lucide.createIcons();
       }, 100);
     }
   });
 }
 
-// Freehand drawing on signature canvas
-function initInlineSignatureDrawing(sCanvas, sCtx, fieldId, clearBtn) {
+// Draws the dashed baseline + "חתום כאן" hint on an empty signature pad.
+function drawSignaturePlaceholder(ctx, canvas) {
+  const w = canvas.width, h = canvas.height;
+  ctx.save();
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, w, h);
+
+  // dashed signing line
+  ctx.strokeStyle = '#cbd5e1';
+  ctx.lineWidth   = Math.max(1, h * 0.02);
+  ctx.setLineDash([6, 5]);
+  ctx.beginPath();
+  ctx.moveTo(w * 0.08, h * 0.74);
+  ctx.lineTo(w * 0.92, h * 0.74);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // hint text
+  ctx.fillStyle    = '#94a3b8';
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `${Math.max(11, Math.min(h * 0.3, 20))}px Heebo, sans-serif`;
+  ctx.fillText('חתום כאן', w / 2, h * 0.42);
+  ctx.restore();
+}
+
+// Freehand drawing on signature canvas, with undo + clear support.
+function initInlineSignatureDrawing(sCanvas, sCtx, fieldId, clearBtn, undoBtn, autoStamp) {
   let drawing = false;
-  const padObj = { fieldId, canvas: sCanvas, ctx: sCtx, isEmpty: true };
+  const padObj = { fieldId, canvas: sCanvas, ctx: sCtx, isEmpty: true, showingPlaceholder: false, isAutoStamp: !!autoStamp, undoStack: [] };
   activeSignaturePads.push(padObj);
 
-  sCanvas.addEventListener('mousedown', (e) => {
+  function beginStroke(pos) {
     drawing = true;
+    // Wipe the "sign here" guide before the first real stroke is captured
+    if (padObj.showingPlaceholder) {
+      sCtx.fillStyle = '#ffffff';
+      sCtx.fillRect(0, 0, sCanvas.width, sCanvas.height);
+      padObj.showingPlaceholder = false;
+    }
+    // Snapshot the pre-stroke state so this stroke can be undone
+    try {
+      padObj.undoStack.push(sCtx.getImageData(0, 0, sCanvas.width, sCanvas.height));
+      if (padObj.undoStack.length > 40) padObj.undoStack.shift();
+    } catch (_) {}
     padObj.isEmpty = false;
     sCanvas.style.borderColor = 'var(--success-color)';
     sCtx.beginPath();
-    const pos = getMousePos(sCanvas, e);
     sCtx.moveTo(pos.x, pos.y);
-  });
+    refreshStepCompletion();
+  }
 
-  sCanvas.addEventListener('mousemove', (e) => {
+  function moveStroke(pos) {
     if (!drawing) return;
-    const pos = getMousePos(sCanvas, e);
     sCtx.lineTo(pos.x, pos.y);
     sCtx.strokeStyle = '#0f172a';
     sCtx.lineWidth   = 2.5;
     sCtx.lineCap     = 'round';
     sCtx.lineJoin    = 'round';
     sCtx.stroke();
-  });
+  }
 
-  sCanvas.addEventListener('mouseup',    () => drawing = false);
-  sCanvas.addEventListener('mouseleave', () => drawing = false);
-
-  sCanvas.addEventListener('touchstart', (e) => {
-    drawing = true;
-    padObj.isEmpty = false;
-    sCanvas.style.borderColor = 'var(--success-color)';
-    sCtx.beginPath();
-    const pos = getTouchPos(sCanvas, e.touches[0]);
-    sCtx.moveTo(pos.x, pos.y);
-  }, { passive: true });
-
-  sCanvas.addEventListener('touchmove', (e) => {
-    if (!drawing) return;
-    const pos = getTouchPos(sCanvas, e.touches[0]);
-    sCtx.lineTo(pos.x, pos.y);
-    sCtx.strokeStyle = '#0f172a';
-    sCtx.lineWidth   = 2.5;
-    sCtx.lineCap     = 'round';
-    sCtx.lineJoin    = 'round';
-    sCtx.stroke();
-  }, { passive: true });
-
-  sCanvas.addEventListener('touchend', () => drawing = false);
-
-  clearBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
+  // Restores the pad to its initial state (stamp, or empty guide).
+  function resetToBase() {
     sCtx.fillStyle = '#ffffff';
     sCtx.fillRect(0, 0, sCanvas.width, sCanvas.height);
     sCanvas.style.borderColor = 'var(--accent-color)';
-    padObj.isEmpty = true;
+    if (padObj.isAutoStamp) {
+      const stamp = new Image();
+      stamp.onload = () => sCtx.drawImage(stamp, 0, 0, sCanvas.width, sCanvas.height);
+      stamp.src = generateCompanyStampBase64();
+      padObj.isEmpty = false;
+      padObj.showingPlaceholder = false;
+    } else {
+      drawSignaturePlaceholder(sCtx, sCanvas);
+      padObj.isEmpty = true;
+      padObj.showingPlaceholder = true;
+    }
+    refreshStepCompletion();
+  }
+
+  sCanvas.addEventListener('mousedown',  (e) => beginStroke(getMousePos(sCanvas, e)));
+  sCanvas.addEventListener('mousemove',  (e) => moveStroke(getMousePos(sCanvas, e)));
+  sCanvas.addEventListener('mouseup',    () => drawing = false);
+  sCanvas.addEventListener('mouseleave', () => drawing = false);
+  sCanvas.addEventListener('touchstart', (e) => beginStroke(getTouchPos(sCanvas, e.touches[0])), { passive: true });
+  sCanvas.addEventListener('touchmove',  (e) => moveStroke(getTouchPos(sCanvas, e.touches[0])),  { passive: true });
+  sCanvas.addEventListener('touchend',   () => drawing = false);
+
+  clearBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    padObj.undoStack = [];
+    resetToBase();
   });
+
+  if (undoBtn) undoBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!padObj.undoStack.length) { resetToBase(); return; }
+    const prev = padObj.undoStack.pop();
+    sCtx.putImageData(prev, 0, 0);
+    if (!padObj.undoStack.length && !padObj.isAutoStamp) {
+      // Back to the blank base — restore the guide
+      drawSignaturePlaceholder(sCtx, sCanvas);
+      padObj.isEmpty = true;
+      padObj.showingPlaceholder = true;
+      sCanvas.style.borderColor = 'var(--accent-color)';
+    } else {
+      padObj.isEmpty = false;
+    }
+    refreshStepCompletion();
+  });
+
+  return padObj;
 }
 
 function getMousePos(canvasDom, mouseEvent) {
