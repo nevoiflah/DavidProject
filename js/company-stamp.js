@@ -7,6 +7,7 @@ const COMPANY_STAMP_FIELD_IDS = new Set([
   'dm_niyud_sig_agent',   // portability: sales-rep signature (page 2)
   'dm_ob_sig_buyer',      // ownership_buyer: buyer signature (page 1)
   'dm_ob_sig_payment',    // ownership_buyer: payment signature (page 2)
+  'dm_ob_sig_ide',        // ownership_buyer: IDE/seller signature (page 0)
   'dm_os_sig_seller'      // ownership_seller: seller signature (page 0)
 ]);
 

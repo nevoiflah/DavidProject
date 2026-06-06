@@ -161,11 +161,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.log('Cleared stale auto-generated IDE template — will reload from תקנון PDF.');
   }
 
-  // 2. Apply bundled default field positions (no network, works everywhere, instant)
-  loadDefaultMappings();
-
-  // 3. Pull admin-saved field definitions from the Netlify server (overrides defaults if newer)
+  // 2. Pull admin-saved field definitions from the Netlify server — the source of truth.
+  //    Overwrites the local copy so synced mapping changes propagate to every device.
   await loadMappingsFromServer();
+
+  // 3. Apply bundled default field positions only for templates the server has nothing for
+  loadDefaultMappings();
 
   // 4. Convert bundled PDFs to images for any template that still has no background
   await autoPreloadPdfTemplates();

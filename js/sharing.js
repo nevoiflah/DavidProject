@@ -38,15 +38,6 @@ function updateMailtoLink(fileUrl) {
   if (mailtoLinkEl) mailtoLinkEl.href = mailtoUrl;
 }
 
-function sendViaMailto(fileUrl) {
-  try {
-    updateMailtoLink(fileUrl);
-    document.getElementById('btn-send-mailto-link')?.click();
-  } catch (e) {
-    console.error("Failed to trigger mailto:", e);
-  }
-}
-
 async function exportTemplateConfig(templateKey) {
   const tpl = state.templates[templateKey];
   if (!tpl || (!tpl.pdfBytes && (!tpl.images || tpl.images.length === 0))) {

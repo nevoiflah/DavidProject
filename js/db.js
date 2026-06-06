@@ -62,27 +62,5 @@ const dbHelper = {
       request.onsuccess = () => resolve(request.result);
       request.onerror   = () => reject(request.error);
     });
-  },
-
-  async getAllSubmissions() {
-    const db = await this.init();
-    return new Promise((resolve, reject) => {
-      const tx      = db.transaction('submissions', 'readonly');
-      const store   = tx.objectStore('submissions');
-      const request = store.getAll();
-      request.onsuccess = () => resolve(request.result);
-      request.onerror   = () => reject(request.error);
-    });
-  },
-
-  async deleteSubmission(id) {
-    const db = await this.init();
-    return new Promise((resolve, reject) => {
-      const tx      = db.transaction('submissions', 'readwrite');
-      const store   = tx.objectStore('submissions');
-      const request = store.delete(id);
-      request.onsuccess = () => resolve();
-      request.onerror   = () => reject(request.error);
-    });
   }
 };

@@ -82,7 +82,7 @@ main {
 /* Dashboard Grid */
 .dashboard-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 1.5rem;
 }
 
@@ -158,8 +158,20 @@ main {
 
 .card-actions {
   margin-top: 1.5rem;
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 10px;
+}
+
+/* Every action button fills its grid cell so all are identical size */
+.card-actions .btn {
+  width: 100%;
+  margin: 0;
+}
+
+/* Client view: only the fill button shows — let it span the full card width */
+body:not(.is-admin) .card-actions .btn:not(.btn-admin-only) {
+  grid-column: 1 / -1;
 }
 
 /* Buttons */
@@ -362,5 +374,10 @@ main {
 
   .template-card {
     min-height: 200px;
+  }
+
+  /* One button per row on phones so long labels don't overflow */
+  .card-actions {
+    grid-template-columns: 1fr;
   }
 }

@@ -46,6 +46,9 @@ function toggleAdminControls() {
     el.style.display = isAuth ? 'inline-flex' : 'none';
   });
 
+  // Drives client-only CSS (e.g. lone fill button spanning full card width)
+  document.body.classList.toggle('is-admin', isAuth);
+
   const adminToolbar = document.getElementById('admin-global-toolbar');
   if (adminToolbar) adminToolbar.style.display = isAuth ? 'flex' : 'none';
 
@@ -238,9 +241,10 @@ function loadPdfBytesFromBundle(templateKey) {
   tpl.isImageTemplate = false;
 }
 
-// Pull field definitions from the server for any templates that have no local fields.
-// Also loads raw PDF bytes from the bundle so forms are immediately usable without
-// waiting for the background image conversion.
+// Pull field definitions from the server and apply them as the source of truth,
+// overwriting the local copy so synced changes reach every device. Also loads raw
+// PDF bytes from the bundle so forms are immediately usable without waiting for
+// the background image conversion.
 async function loadMappingsFromServer() {
   try {
     const response = await fetch('/.netlify/functions/sync-mapping');
@@ -255,9 +259,8 @@ async function loadMappingsFromServer() {
       const tpl = state.templates[key];
       if (!tpl) continue;
 
-      // Only apply if local has no fields yet (don't overwrite admin's own work)
-      if (tpl.fields && tpl.fields.length > 0) continue;
-
+      // Server is the source of truth — overwrite the local copy so a synced
+      // mapping change propagates to every device on the next load.
       tpl.fields = data.fields;
 
       // Load PDF bytes from bundle so the fill button enables and filler renders instantly
@@ -378,10 +381,4 @@ function showToast(message, type = 'info') {
   toast.className = `toast toast-${type} show`;
   toast.textContent = message;
   setTimeout(() => toast.classList.remove('show'), 4000);
-}
-
-async function saveEmailSettings() {
-  await saveStateToDB();
-  showToast("הגדרות האימייל נשמרו בהצלחה!", "success");
-  switchView('dashboard');
 }
