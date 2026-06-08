@@ -4,10 +4,50 @@
 
 const PDF_PRELOAD_MAP = [
   { templateKey: 'portability',         assetKey: 'PDF_NIYUD',    label: 'טופס ניוד מספר' },
-  { templateKey: 'ownership_seller',    assetKey: 'PDF_OWNERSHIP', label: 'העברת בעלות - עובד חדש' },
-  { templateKey: 'ownership_buyer',     assetKey: 'PDF_OWNERSHIP', label: 'העברת בעלות - עובד עוזב' },
   { templateKey: 'ide-terms-agreement', assetKey: 'PDF_TAKANON',   label: 'תקנון טלפונים' }
 ];
+
+// Ownership forms use the updated per-form PDFs (with IDE stamps already printed).
+// They are rendered directly via PDF.js (pdfBytes) rather than the image pipeline.
+const OWNERSHIP_PDF_FILES = {
+  ownership_seller: 'ownership_seller_updated.pdf',
+  ownership_buyer:  'ownership_buyer_updated.pdf'
+};
+const OWNERSHIP_PDF_VERSION = '2026-06-08';
+
+// Fetches the updated ownership PDFs and loads them as the template background.
+async function loadOwnershipPdfsFromFile() {
+  const needsRefresh = localStorage.getItem('ownership_pdf_version') !== OWNERSHIP_PDF_VERSION;
+
+  for (const [templateKey, fileName] of Object.entries(OWNERSHIP_PDF_FILES)) {
+    const tpl = state.templates[templateKey];
+    if (!tpl) continue;
+    if (tpl.pdfBytes && !needsRefresh) continue; // already loaded this version
+
+    try {
+      const resp = await fetch(encodeURI(fileName));
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const buf = await resp.arrayBuffer();
+
+      tpl.pdfBytes        = buf;
+      tpl.isImageTemplate = false;
+      tpl.images          = [];
+
+      await dbHelper.save(templateKey, {
+        fields:          tpl.fields,
+        isImageTemplate: false,
+        pdfBytes:        buf,
+        images:          []
+      });
+      updateTemplateCardStatus(templateKey);
+      console.log(`Loaded updated PDF for ${templateKey} (${fileName})`);
+    } catch (err) {
+      console.warn(`Could not load updated PDF for ${templateKey} (${fileName}):`, err);
+    }
+  }
+
+  localStorage.setItem('ownership_pdf_version', OWNERSHIP_PDF_VERSION);
+}
 
 function setCardLoading(templateKey, isLoading) {
   const badge   = document.getElementById(`badge-${templateKey}`);

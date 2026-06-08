@@ -4,10 +4,9 @@
 
 // Field IDs that receive the company stamp automatically
 const COMPANY_STAMP_FIELD_IDS = new Set([
-  'dm_niyud_sig_agent',   // portability: sales-rep signature (page 2)
-  'dm_ob_sig_buyer',      // ownership_buyer: buyer signature (page 1)
-  'dm_ob_sig_payment',    // ownership_buyer: payment signature (page 2)
-  'dm_ob_sig_ide'         // ownership_buyer: IDE/seller signature (page 0)
+  'dm_niyud_sig_agent'    // portability: sales-rep signature (page 2)
+  // Ownership IDE stamps are now pre-printed into the updated ownership PDFs;
+  // the buyer signs their own blank line by hand.
 ]);
 
 // Returns true for any field that should carry the company stamp.

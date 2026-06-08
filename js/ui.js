@@ -221,10 +221,10 @@ async function syncAllMappingsToServer() {
 }
 
 // Maps each template key to its bundled PDF asset key in PDF_ASSETS
+// Ownership templates intentionally omitted — they load their updated per-form
+// PDFs via loadOwnershipPdfsFromFile() instead of the bundled PDF_OWNERSHIP asset.
 const TEMPLATE_ASSET_MAP = {
   'portability':         'PDF_NIYUD',
-  'ownership_seller':    'PDF_OWNERSHIP',
-  'ownership_buyer':     'PDF_OWNERSHIP',
   'ide-terms-agreement': 'PDF_TAKANON'
 };
 

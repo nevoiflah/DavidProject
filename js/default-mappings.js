@@ -158,36 +158,9 @@ const DEFAULT_FIELD_MAPPINGS = {
         "page": 0,
         "x": 4.2, "y": 58.5, "w": 27.6, "h": 2.8,
         "required": false, "color": "purple"
-      },
-      // ── Page 1: buyer/customer signatures (top + bottom) ─────────────
-      {
-        "id": "dm_os_sig_buyer_top",
-        "name": "sig_buyer_top",
-        "label": "חתימת IDE",
-        "type": "signature",
-        "page": 1,
-        "x": 12.8, "y": 39.0, "w": 30, "h": 8,
-        "required": true, "color": "purple"
-      },
-      {
-        "id": "dm_os_sig_buyer_bottom",
-        "name": "sig_buyer_bottom",
-        "label": "חתימת IDE",
-        "type": "signature",
-        "page": 1,
-        "x": 4, "y": 88.0, "w": 40, "h": 9,
-        "required": true, "color": "purple"
-      },
-      // ── Page 2: payment-page customer signature ──────────────────────
-      {
-        "id": "dm_os_sig_payment",
-        "name": "sig_buyer_payment",
-        "label": "חתימת IDE",
-        "type": "signature",
-        "page": 2,
-        "x": 20.8, "y": 89.5, "w": 32.3, "h": 8,
-        "required": false, "color": "yellow"
       }
+      // IDE signatures/stamps are pre-printed into ownership_seller_updated.pdf —
+      // no app signature fields needed on this form.
     ]
   },
 
@@ -197,26 +170,7 @@ const DEFAULT_FIELD_MAPPINGS = {
   /* ------------------------------------------------------------------ */
   "ownership_buyer": {
     "fields": [
-      // ── Page 0: client signature at top (near "סוג לקוח") ────────────
-      {
-        "id": "dm_ob_sig_client_top",
-        "name": "sig_client_top",
-        "label": "חתימת IDE",
-        "type": "signature",
-        "page": 0,
-        "x": 4, "y": 57.0, "w": 40, "h": 8,
-        "required": true, "color": "purple"
-      },
-      // ── Page 0: IDE (transferor) signature at bottom ─────────────────
-      {
-        "id": "dm_ob_sig_ide",
-        "name": "sig_ide_seller",
-        "label": "חתימת IDE (מוכר)",
-        "type": "signature",
-        "page": 0,
-        "x": 4, "y": 68.0, "w": 40, "h": 10,
-        "required": true, "color": "purple"
-      },
+      // IDE stamps are pre-printed into ownership_buyer_updated.pdf.
       // ── Page 1 (buyer details) ───────────────────────────────────────
       {
         "id": "dm_ob_buyer_name",
@@ -335,15 +289,6 @@ const DEFAULT_FIELD_MAPPINGS = {
         "page": 2,
         "x": 54.7, "y": 43.2, "w": 16.2, "h": 2.8,
         "required": false, "color": "purple"
-      },
-      {
-        "id": "dm_ob_sig_payment",
-        "name": "sig_buyer_payment",
-        "label": "חתימת IDE",
-        "type": "signature",
-        "page": 2,
-        "x": 20.8, "y": 89.5, "w": 32.3, "h": 8,
-        "required": false, "color": "yellow"
       }
     ]
   },

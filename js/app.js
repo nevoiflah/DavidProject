@@ -149,6 +149,19 @@ document.addEventListener("DOMContentLoaded", async () => {
   // 1. Load whatever this browser already has saved locally
   await loadStateFromDB();
 
+  // Migration: ownership forms switched to updated per-form PDFs (with IDE stamps
+  // pre-printed). Clear any stale cached background/fields so the new PDF + field
+  // set load fresh on this browser.
+  if (localStorage.getItem('ownership_pdf_version') !== OWNERSHIP_PDF_VERSION) {
+    for (const k of ['ownership_seller', 'ownership_buyer']) {
+      const t = state.templates[k];
+      if (!t) continue;
+      t.fields = []; t.images = []; t.pdfBytes = null; t.isImageTemplate = false;
+      await dbHelper.save(k, { fields: [], isImageTemplate: false, pdfBytes: null, images: [] });
+    }
+    console.log('Ownership templates reset for updated PDFs.');
+  }
+
   // Migration: if ide-terms-agreement was previously saved as the programmatic PDF
   // (pdfBytes non-null = auto-generated), clear it so the real תקנון file loads instead.
   const ideTpl = state.templates['ide-terms-agreement'];
@@ -171,6 +184,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   // 4. Convert bundled PDFs to images for any template that still has no background
   await autoPreloadPdfTemplates();
   await autoInitializeIDETemplate();
+
+  // 4b. Load the updated ownership PDFs (with IDE stamps already printed)
+  await loadOwnershipPdfsFromFile();
 
   // Restore onboarding input if name already set
   if (onboardingInput && state.clientName) onboardingInput.value = state.clientName;
