@@ -204,8 +204,6 @@ async function saveStateToDB() {
 // Only the fields array is synced (not the large image buffers — those come from the bundle).
 async function syncAllMappingsToServer() {
   for (const [key, val] of Object.entries(state.templates)) {
-    // Ownership forms are bundled-managed — don't push them to (or pull from) the server.
-    if (key === 'ownership_seller' || key === 'ownership_buyer') continue;
     if (!val.fields || val.fields.length === 0) continue;
     try {
       await fetch('/.netlify/functions/sync-mapping', {
@@ -214,7 +212,9 @@ async function syncAllMappingsToServer() {
           'Content-Type':      'application/json',
           'x-admin-password':  'PartnerAdmin2026!'
         },
-        body: JSON.stringify({ template: key, fields: val.fields })
+        // Tag the sync with the current PDF version so the loader can tell a
+        // current mapping from a stale pre-update one (ownership forms).
+        body: JSON.stringify({ template: key, fields: val.fields, version: OWNERSHIP_PDF_VERSION })
       });
     } catch (err) {
       console.warn(`Could not sync "${key}" to server:`, err);
@@ -256,10 +256,11 @@ async function loadMappingsFromServer() {
     let anyUpdated = false;
 
     for (const [key, data] of Object.entries(serverData)) {
-      // Ownership forms are bundled-managed (updated per-form PDFs + default-mappings.js).
-      // Never let the shared server store override them — it holds stale pre-update fields.
-      if (key === 'ownership_seller' || key === 'ownership_buyer') continue;
       if (!data || !data.fields || data.fields.length === 0) continue;
+      // Ownership server mappings are only honored when they were synced for the
+      // CURRENT PDF version. Anything older (or version-less) is stale pre-update
+      // data — skip it and let the bundled default-mappings apply instead.
+      if ((key === 'ownership_seller' || key === 'ownership_buyer') && data.version !== OWNERSHIP_PDF_VERSION) continue;
 
       const tpl = state.templates[key];
       if (!tpl) continue;

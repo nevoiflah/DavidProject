@@ -56,13 +56,13 @@ exports.handler = async function(event) {
       }
 
       const body = JSON.parse(event.body);
-      const { template, fields } = body;
+      const { template, fields, version } = body;
 
       if (!template || !Array.isArray(fields)) {
         return { statusCode: 400, headers: CORS_HEADERS, body: 'Missing template or fields' };
       }
 
-      await store.set(template, JSON.stringify({ fields }));
+      await store.set(template, JSON.stringify({ fields, version: version || null }));
 
       return { statusCode: 200, headers: CORS_HEADERS, body: 'OK' };
     }
