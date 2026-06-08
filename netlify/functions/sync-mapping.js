@@ -6,6 +6,18 @@ const { getStore } = require('@netlify/blobs');
 
 const ADMIN_PASSWORD = 'PartnerAdmin2026!';
 
+// Open the Blobs store. Netlify's automatic mode often isn't available in this
+// runtime ("environment has not been configured to use Netlify Blobs"), so fall
+// back to manual mode using a site ID + personal access token from env vars.
+function openMappingStore() {
+  const siteID = process.env.BLOBS_SITE_ID;
+  const token  = process.env.BLOBS_TOKEN;
+  if (siteID && token) {
+    return getStore({ name: 'form-mappings', siteID, token });
+  }
+  return getStore('form-mappings'); // automatic mode (works only if Netlify injects context)
+}
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin':  '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -19,7 +31,7 @@ exports.handler = async function(event) {
   }
 
   try {
-    const store = getStore('form-mappings');
+    const store = openMappingStore();
 
     // ── GET: return stored fields for one or all templates ──────────────────
     if (event.httpMethod === 'GET') {
