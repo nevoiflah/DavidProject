@@ -13,7 +13,7 @@ const OWNERSHIP_PDF_FILES = {
   ownership_seller: 'ownership_seller_updated.pdf',
   ownership_buyer:  'ownership_buyer_updated.pdf'
 };
-const OWNERSHIP_PDF_VERSION = '2026-06-08';
+const OWNERSHIP_PDF_VERSION = '2026-06-08b';
 
 // Fetches the updated ownership PDFs and loads them as the template background.
 async function loadOwnershipPdfsFromFile() {
