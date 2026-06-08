@@ -111,39 +111,15 @@ async function shareTemplateConfig(templateKey) {
     return;
   }
 
-  showToast("אורז את הטופס ומעלה לענן השיתוף...", "info");
+  // Live link — carries only the template key (no frozen snapshot). When the
+  // client opens it, the app loads the CURRENT deployed/synced mapping + PDF,
+  // so any future change propagates to every existing link automatically with
+  // no need to resend. Links never expire.
+  const shareUrl = `${window.location.origin}${window.location.pathname}?fill=${encodeURIComponent(templateKey)}`;
 
-  try {
-    const configData = {
-      templateKey,
-      isImageTemplate: tpl.isImageTemplate,
-      fields:          tpl.fields,
-      pdfBytes:        tpl.pdfBytes ? arrayBufferToBase64(tpl.pdfBytes) : null,
-      images:          tpl.images ? tpl.images.map(img => ({ bytes: arrayBufferToBase64(img.bytes), type: img.type })) : []
-    };
-
-    const blob        = new Blob([JSON.stringify(configData)], { type: 'application/json' });
-    const filename    = `partner_config_${templateKey}_${Date.now()}.json`;
-    const formDataObj = new FormData();
-    formDataObj.append('files[]', blob, filename);
-
-    const response = await fetch('https://uguu.se/upload', { method: 'POST', body: formDataObj });
-    const resData  = await response.json();
-
-    if (resData?.success && resData.files?.[0]) {
-      const cloudConfigUrl = resData.files[0].url;
-      const shareUrl       = `${window.location.origin}${window.location.pathname}?config=${encodeURIComponent(cloudConfigUrl)}&fill=${templateKey}`;
-
-      document.getElementById('share-link-input').value = shareUrl;
-      document.getElementById('share-modal').classList.remove('hidden');
-      showToast("הטופס הועלה לענן בהצלחה!", "success");
-    } else {
-      throw new Error("Cloud upload response was unsuccessful");
-    }
-  } catch (err) {
-    console.error("Cloud sharing failed", err);
-    showToast("שגיאה בשיתוף הענן. נסה שוב מאוחר יותר", "error");
-  }
+  document.getElementById('share-link-input').value = shareUrl;
+  document.getElementById('share-modal').classList.remove('hidden');
+  showToast("נוצר קישור חי — מתעדכן אוטומטית עם כל שינוי שתפרסם", "success");
 }
 
 async function loadConfigFromUrlParam() {
