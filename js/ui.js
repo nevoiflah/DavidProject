@@ -204,6 +204,8 @@ async function saveStateToDB() {
 // Only the fields array is synced (not the large image buffers — those come from the bundle).
 async function syncAllMappingsToServer() {
   for (const [key, val] of Object.entries(state.templates)) {
+    // Ownership forms are bundled-managed — don't push them to (or pull from) the server.
+    if (key === 'ownership_seller' || key === 'ownership_buyer') continue;
     if (!val.fields || val.fields.length === 0) continue;
     try {
       await fetch('/.netlify/functions/sync-mapping', {
@@ -254,6 +256,9 @@ async function loadMappingsFromServer() {
     let anyUpdated = false;
 
     for (const [key, data] of Object.entries(serverData)) {
+      // Ownership forms are bundled-managed (updated per-form PDFs + default-mappings.js).
+      // Never let the shared server store override them — it holds stale pre-update fields.
+      if (key === 'ownership_seller' || key === 'ownership_buyer') continue;
       if (!data || !data.fields || data.fields.length === 0) continue;
 
       const tpl = state.templates[key];
